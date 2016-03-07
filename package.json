@@ -1,0 +1,18 @@
+{
+  "name": "sdf-cartographer",
+  "version": "0.0.1",
+  "description": "Signed distance field texture atlas and lookup table generator for OpenGL ES text support",
+  "dependencies": {
+    "fontnik": "0.4.4",
+    "lodash": "^4.6.1",
+    "pbf": "^1.3.5"
+  },
+  "scripts": {
+    "test": "faucet `find test -name '*-test.js'`"
+  },
+  "devDependencies": {
+    "faucet": "0.0.1",
+    "tape": "4.5.1",
+    "font-manager": "^0.2.1"
+  }
+}
