@@ -11,14 +11,15 @@ var mkdirp = require('mkdirp')
 var Protobuf = require('pbf')
 var Glyphs = require('./glyphs')
 
-var outputPath = './saved'
-var fontFamily = 'Times New Roman'
+var TMP_PATH = './tmp'
+var SAVE_PATH = './saved'
 
+var fontFamily = 'Times New Roman'
 var font = fontManager.findFontSync({ family: fontFamily })
 var fontBuffer = fs.readFileSync(font.path)
 var glyphRange = { start: 0, end: 256 }
 
-convert(function (err, results) {
+createSdf(function (err, results) {
   if (err) {
     console.error(err)
   } else {
@@ -26,14 +27,14 @@ convert(function (err, results) {
   }
 })
 
-function load(callback) {
-  loadBuffer(fontBuffer, callback)
-}
-
-function convert(callback) {
+function createSdf(callback) {
   var start = glyphRange.start
   var end = glyphRange.end
-  convertBuffer(fontBuffer, start, end, callback)
+  writeSdf(fontBuffer, start, end, callback)
+}
+
+function load(callback) {
+  loadBuffer(fontBuffer, callback)
 }
 
 function loadBuffer(buffer, callback) {
@@ -48,13 +49,21 @@ function uniqueName() {
   return baseName + sep + uuid() + '.sdf'
 }
 
-function createUniquePath() {
-  var dir = path.join(outputPath, uniqueName())
+function createTmpPath() {
+  var dir = path.join(TMP_PATH, uniqueName())
   mkdirp.sync(dir)
   return dir
 }
 
-function convertBuffer(buffer, start, end, callback) {
+function createWebGLPath() {
+  return path.join('./webgl')
+}
+
+function createSdfPath() {
+  return createWebGLPath()
+}
+
+function writeSdf(buffer, start, end, callback) {
   sdf.range({
     font: buffer,
     start: start,
@@ -64,8 +73,9 @@ function convertBuffer(buffer, start, end, callback) {
     var stacks = _.values(allGlyphs.stacks)
     var glyphs = _.first(stacks).glyphs
     var bins = _.values(glyphs)
+    insetBorderInPlace(bins)
     var size = binPack(bins, { inPlace: true })
-    var sdfPath = createUniquePath()
+    var sdfPath = createSdfPath()
     var texturePath = path.join(sdfPath, 'texture0.png')
     var metricsPath = path.join(sdfPath, 'metrics.json')
     var filesToWrite = [
@@ -73,6 +83,14 @@ function convertBuffer(buffer, start, end, callback) {
       writeMetrics(metricsPath, glyphs)
     ]
     async.parallel(filesToWrite, callback)
+  })
+}
+
+function insetBorderInPlace(bins) {
+  _.forEach(bins, function (b) {
+    var inset = b.border * 2
+    b.width += inset
+    b.height += inset
   })
 }
 
@@ -111,22 +129,44 @@ function writePng(path, bins, size) {
   }
 }
 
+/**
+  {
+    "family":"Open Sans",
+    "style":"Regular",
+    "buffer":3,
+    "size":24,
+    "chars":{
+      " ":[0,0,0,0,6],
+      "!":[4,19,1,18,6,2,2],
+      ...
+    }
+  }
+ */
 function writeMetrics(path, glyphs) {
   return function (callback) {
-    var metrics = JSON.stringify({})
-    fs.writeFileSync(path, metrics)
+    var chars = {}
+    var list = _.values(glyphs)
+    _.forEach(list, function (g) {
+      var ch = String.fromCharCode(g.id)
+      chars[ch] = [
+        g.width - (g.border * 2),
+        g.height - (g.border * 2),
+        g.left,
+        g.top,
+        g.advance,
+        g.x,
+        g.y
+      ]
+    })
+    var metrics = {
+      "family": fontFamily,
+      "style": "Regular",
+      "size": 24,
+      "buffer": 3,
+      "chars": chars
+    }
+    var buffer = 'var metrics = ' + JSON.stringify(metrics) + ';'
+    fs.writeFileSync(path, buffer)
     callback(null, path)
   }
-}
-
-// Command line
-
-function convertFile(file, callback) {
-  fs.readFile(file, function (err, buf) {
-    if (err) {
-      callback(err)
-    } else {
-      convertBuffer(buf, callback)
-    }
-  })
 }

@@ -64,9 +64,9 @@ function Glyphs (buffer, end) {
       } else if (tag == 2) {
         glyph.bitmap = buffer.readBytes()
       } else if (tag == 3) {
-        glyph.width = insetBorder(buffer.readVarint())
+        glyph.width = buffer.readVarint()
       } else if (tag == 4) {
-        glyph.height = insetBorder(buffer.readVarint())
+        glyph.height = buffer.readVarint()
       } else if (tag == 5) {
         glyph.left = buffer.readSVarint()
       } else if (tag == 6) {
@@ -76,13 +76,10 @@ function Glyphs (buffer, end) {
       } else {
         buffer.skip(val)
       }
+      glyph.border = BORDER
     }
 
     return glyph
-  }
-
-  function insetBorder(value) {
-    return value + BORDER * 2
   }
 }
 
