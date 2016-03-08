@@ -38,7 +38,6 @@ tape('can load font', function (t) {
   })
 })
 
-
 tape('can save font glyphs', function (t) {
   var font = loadTestFontSync()
   var buffer = fs.readFileSync(font.path)
