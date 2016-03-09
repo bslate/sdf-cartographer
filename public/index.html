@@ -59,7 +59,7 @@ uploadForm.on('submit', function () {
   e.preventDefault()
   hideDownload()
 
-  var form = uploadForm[0][0]
+  var form = this
   var data = new FormData(form)
   var uploadError = d3.select('#upload .error')
   d3.json(form.action)
