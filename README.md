@@ -21,3 +21,7 @@ Or from a font family available on the system:
 To start a web server with a simple dynamic HTML interface:
 
 `node server`
+
+# Known Issues
+
+Some fonts segfault the server. (e.g. `Osaka.ttf`)
