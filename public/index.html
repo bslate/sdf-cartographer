@@ -7,17 +7,22 @@ body {
   font-family: sans-serif;
   font-size: large;
 }
-fieldset {
-  border: solid 1px silver;
+form {
+  padding-bottom: 20px;
+  border-bottom: solid 1px #444;
 }
 button {
   font-weight: bold;
 }
+pre {
+  background-color: #ddd;
+  width: 600px;
+  height: 400px;
+  white-space: pre-wrap;
+  overflow-y: auto;
+}
 .error {
   color: red;
-}
-#preview {
-  display: none;
 }
 #download {
   display: none;
@@ -33,12 +38,10 @@ button {
   </form>
   <div class="error"></div>
 </div>
-<div id="preview">
-  <div class="sdf-view"></div>
-</div>
 <div id="download">
   <h1>Download SDF files</h1>
   <ul id="download-file-list"></ul>
+  <div id="preview"></div>
 </div>
 <script src="scripts/d3.min.js"></script>
 <script>
@@ -74,12 +77,14 @@ uploadForm.on('submit', function () {
 function hideDownload() {
   d3.select('#download').style('display', 'none')
   d3.select('#download-file-list').selectAll('*').remove()
+  d3.select('#preview').selectAll('*').remove()
 }
 
 function showDownload(files) {
   d3.select('#download').style('display', 'block')
   d3.select('#download-file-list').selectAll('li')
-    .data(files).enter()
+    .data(files)
+    .enter()
       .append('li')
       .append('a')
       .attr('href', function href(d) { return d })
@@ -89,6 +94,29 @@ function showDownload(files) {
         var match = d.match(re)
         return match.length >= 3 ? match[2] : d
       })
+  var images = files.filter(function (f) {
+    return f.match(/(png|jpg|bmp)$/)
+  })
+  d3.select('#preview').selectAll('img')
+    .data(images)
+    .enter()
+      .append('img')
+      .attr('src', function src(d) { return d })
+  var metrics = files.filter(function (f) {
+    return f.match(/json$/)
+  })
+  metrics.forEach(function (url) {
+    d3.json(url, function (err, obj) {
+      if (err) {
+        console.warn(err)
+      } else {
+        var str = JSON.stringify(obj, null, 2)
+        d3.select('#preview')
+          .append('pre')
+          .text(str)
+      }
+    })
+  })
 }
 </script>
 </body>
