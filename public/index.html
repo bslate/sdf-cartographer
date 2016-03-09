@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<head>
+<title>SDF Cartographer</title>
+<style>
+body {
+  font-family: sans-serif;
+  font-size: large;
+}
+fieldset {
+  border: solid 1px silver;
+}
+button {
+  font-weight: bold;
+}
+.error {
+  color: red;
+}
+#preview {
+  display: none;
+}
+#download {
+  display: none;
+}
+</style>
+</head>
+<body>
+<div id="upload">
+  <h1>Upload a font file (.ttf, .otf)</h1>
+  <form action="/" method="post" enctype="multipart/form-data">
+    <input id="upload-font-input" type="file" name="font"></input>
+    <button type="submit">Upload Font</button>
+  </form>
+  <div class="error"></div>
+</div>
+<div id="preview">
+  <div class="sdf-view"></div>
+</div>
+<div id="download">
+  <h1>Download SDF files</h1>
+  <ul id="download-file-list"></ul>
+</div>
+<script src="scripts/d3.min.js"></script>
+<script>
+var uploadForm = d3.select('#upload form')
+var uploadButton = d3.select('#upload button')
+var uploadFontInput = d3.select('#upload-font-input')
+
+uploadFontInput.on('change', function () {
+  var hasFiles = (this.files.length > 0)
+  uploadButton.attr('disabled', hasFiles ? null : true)
+})
+
+uploadForm.on('submit', function () {
+  var e = d3.event
+  e.preventDefault()
+  hideDownload()
+
+  var form = uploadForm[0][0]
+  var data = new FormData(form)
+  var uploadError = d3.select('#upload .error')
+  d3.json(form.action)
+    .post(data, function (err, res) {
+      if (err) {
+        uploadError.text(err)
+        console.error(err)
+      } else {
+        uploadError.text(null)
+        showDownload(res.files)
+      }
+    })
+})
+
+function hideDownload() {
+  d3.select('#download').style('display', 'none')
+  d3.select('#download-file-list').selectAll('*').remove()
+}
+
+function showDownload(files) {
+  d3.select('#download').style('display', 'block')
+  d3.select('#download-file-list').selectAll('li')
+    .data(files).enter()
+      .append('li')
+      .append('a')
+      .attr('href', function href(d) { return d })
+      .attr('target', '_blank')
+      .text(function name(d) {
+        var re = /^(.*\/)([^\/]*)$/ /* (path)(filename.ext) */
+        var match = d.match(re)
+        return match.length >= 3 ? match[2] : d
+      })
+}
+</script>
+</body>
+</html>

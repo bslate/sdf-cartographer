@@ -7,15 +7,13 @@ var sdfGenerator = require('fontnik')
 var async = require('async')
 var binPack = require('bin-pack')
 var pngStream = require('png-stream')
-var uuid = require('node-uuid').v4
-var mkdirp = require('mkdirp')
 var Protobuf = require('pbf')
 var Glyphs = require('./glyphs')
 
-module.exports.write = writeSdf
 module.exports.fromFontDescriptor = fromFontDescriptor
 module.exports.fromFontFamily = fromFontFamily
 module.exports.fromFontFile = fromFontFile
+module.exports.fromFontBuffer = fromFontBuffer
 
 function fromFontDescriptor(fontDescriptor, toFile, opts, callback) {
   fontManager.findFont(fontDescriptor, function (font) {
@@ -28,6 +26,16 @@ function fromFontFamily(family, toFile, opts, callback) {
 }
 
 function fromFontFile(file, toFile, opts, callback) {
+  fs.readFile(file, function (err, buffer) {
+    if (err) {
+      callback(err)
+    } else {
+      fromFontBuffer(buffer, toFile, opts.start, opts.end)
+    }
+  })
+}
+
+function fromFontBuffer(buffer, toFile, opts, callback) {
   if (typeof opts === 'function') {
     callback = opts
     opts = {}
@@ -38,13 +46,8 @@ function fromFontFile(file, toFile, opts, callback) {
   if (typeof opts.end === 'undefined') {
     opts.end = 256
   }
-  fs.readFile(file, function (err, buffer) {
-    if (err) {
-      callback(err)
-    } else {
-      writeSdf(toFile, buffer, opts.start, opts.end)
-    }
-  })
+
+  writeSdf(toFile, buffer, opts.start, opts.end, callback)
 }
 
 function writeSdf(file, fontBuffer, start, end, callback) {
@@ -132,13 +135,14 @@ function writeMetrics(path, glyphs, fontBuffer) {
         g.y
       ]
     })
-    sdfGenerator.load(fontBuffer, function (err, fontInfo) {
+    sdfGenerator.load(fontBuffer, function (err, infos) {
       if (err) {
         callback(err, path)
       } else {
+        var info = _.first(infos)
         var metrics = {
-          "family": fontInfo['family_name'],
-          "style": fontInfo['style_name'],
+          "family": info['family_name'],
+          "style": info['style_name'],
           "buffer": 3,
           "chars": chars
         }
