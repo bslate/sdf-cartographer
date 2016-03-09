@@ -20,7 +20,7 @@ Or from a font family available on the system:
 
 To start a web server with a simple dynamic HTML interface:
 
-`node server`
+`node .`
 
 # Known Issues
 
